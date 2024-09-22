@@ -1,15 +1,14 @@
 import logging
 import functions_framework
 import os
-import argparse
 import requests
 import subprocess
 import threading
 import time
 import contextlib
+import argparse
 
-
-from utils import ok
+from utils import ok, _LOG_LEVEL_MAP
 
 @functions_framework.http
 def handle_job_request(request):
@@ -19,7 +18,7 @@ def handle_job_request(request):
         return "Invalid job data", 400
 
     try:
-        args = get_args()
+        args = get_args(request)
         engine = Engine(args)
         handle_job(args, engine, job)
         return "Job processed successfully", 200
@@ -28,17 +27,19 @@ def handle_job_request(request):
         return "Failed to process job", 500
 
 
-def get_args():
-    parser = argparse.ArgumentParser(description='Engine Arguments')
-    parser.add_argument('--engine', default=os.environ.get('ENGINE_COMMAND'))
-    parser.add_argument('--setoption', nargs='*', default=[])
-    parser.add_argument('--token', default=os.environ.get('LICHESS_API_TOKEN'))
-    parser.add_argument('--max_threads', type=int, default=int(os.environ.get('MAX_THREADS', os.cpu_count())))
-    parser.add_argument('--max_hash', type=int, default=int(os.environ.get('MAX_HASH', '512')))
-    parser.add_argument('--keep_alive', type=int, default=int(os.environ.get('KEEP_ALIVE', '300')))
-    parser.add_argument('--log_level', default=os.environ.get('LOG_LEVEL', 'info'))
+def get_args(request):
+    args = argparse.Namespace()
+    args.engine = request.args.get('engine', os.environ.get('ENGINE_COMMAND'))
+    args.setoption = request.args.getlist('setoption') or []
+    args.token = request.args.get('token', os.environ.get('LICHESS_API_TOKEN'))
+    args.max_threads = int(request.args.get('max_threads', os.environ.get('MAX_THREADS', os.cpu_count())))
+    args.max_hash = int(request.args.get('max_hash', os.environ.get('MAX_HASH', '512')))
+    args.keep_alive = int(request.args.get('keep_alive', os.environ.get('KEEP_ALIVE', '300')))
+    args.log_level = request.args.get('log_level', os.environ.get('LOG_LEVEL', 'info'))
+    args.lichess = request.args.get('lichess', os.environ.get('LICHESS_URL', 'https://lichess.org'))
+    args.broker = request.args.get('broker', os.environ.get('BROKER_URL', 'https://engine.lichess.ovh'))
 
-    args = parser.parse_args()
+    logging.getLogger().setLevel(_LOG_LEVEL_MAP.get(args.log_level.lower(), logging.INFO))
 
     if not args.engine:
         logging.error("ENGINE_COMMAND environment variable is required")

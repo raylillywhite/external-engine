@@ -5,7 +5,7 @@ import threading
 import os
 import secrets
 import argparse
-from utils import ok, setup_http_session
+from utils import ok, setup_http_session, _LOG_LEVEL_MAP
 
 def get_args():
     parser = argparse.ArgumentParser(description='Engine Arguments')
@@ -24,6 +24,8 @@ def get_args():
     parser.add_argument('--log_level', default=os.environ.get('LOG_LEVEL', 'info'))
 
     args = parser.parse_args()
+
+    logging.getLogger().setLevel(_LOG_LEVEL_MAP.get(args.log_level.lower(), logging.INFO))
 
     if not args.engine:
         logging.error("ENGINE_COMMAND environment variable is required")
@@ -107,9 +109,14 @@ def invoke_cloud_function(cloud_function_url, job):
         logging.error("Error invoking cloud function: %s", err)
 
 def main():
+    # Configure logging
+    logging.basicConfig(level=logging.INFO)
+    
+    logging.info("Starting server")
     args = get_args()
     http = setup_http_session(args.token)
     secret = register_engine(args, http)
+    logging.info("Engine registered with secret: %s", secret)
     threading.Thread(target=poll_for_work, args=(args, http, secret), daemon=True).start()
 
     # Keep the main thread alive
