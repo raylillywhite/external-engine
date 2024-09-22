@@ -6,6 +6,7 @@ import subprocess
 import threading
 import time
 import contextlib
+import argparse
 
 _LOG_LEVEL_MAP = {
     "critical": logging.CRITICAL,
@@ -17,34 +18,13 @@ _LOG_LEVEL_MAP = {
 }
 
 def get_args():
-    class Args:
-        pass
-
-    args = Args()
-    args.name = os.environ.get('ENGINE_NAME', 'Alpha 2')
-    args.engine = os.environ.get('ENGINE_COMMAND')
-    if not args.engine:
-        logging.error("ENGINE_COMMAND environment variable is required")
-        raise ValueError("ENGINE_COMMAND environment variable is required")
-
-    args.setoption = []  # Add custom UCI options if needed, e.g., [('Hash', '1024')]
-    args.lichess = os.environ.get('LICHESS_URL', 'https://lichess.org')
-    args.broker = os.environ.get('BROKER_URL', 'https://engine.lichess.ovh')
-    args.token = os.environ.get('LICHESS_API_TOKEN')
-    if not args.token:
-        logging.error("LICHESS_API_TOKEN environment variable is required")
-        raise ValueError("LICHESS_API_TOKEN environment variable is required")
-
-    args.provider_secret = os.environ.get('PROVIDER_SECRET')
-    args.max_threads = int(os.environ.get('MAX_THREADS', os.cpu_count()))
-    args.max_hash = int(os.environ.get('MAX_HASH', '512'))
-    args.keep_alive = int(os.environ.get('KEEP_ALIVE', '300'))
-    args.log_level = os.environ.get('LOG_LEVEL', 'info')
-    args.cloud_function_url = os.environ.get('CLOUD_FUNCTION_URL')
-    args.poll_interval = int(os.environ.get('POLL_INTERVAL', '10'))
-    
-    logging.getLogger().setLevel(_LOG_LEVEL_MAP.get(args.log_level.lower(), logging.INFO))
-    
+    parser = argparse.ArgumentParser(description='Engine Arguments')
+    parser.add_argument('--broker', default=os.environ.get('BROKER_URL', 'http://localhost:5000'))
+    parser.add_argument('--token', default=os.environ.get('API_TOKEN', ''))
+    parser.add_argument('--poll_timeout', type=int, default=30)
+    parser.add_argument('--poll_interval', type=int, default=5)
+    parser.add_argument('--cloud_function_url', default=os.environ.get('CLOUD_FUNCTION_URL', ''))
+    args = parser.parse_args()
     return args
 
 def setup_http_session(token):
