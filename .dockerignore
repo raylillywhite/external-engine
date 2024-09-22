@@ -1,9 +1,0 @@
-# Ignore the .git directory
-.git
-# Ignore the .gcloudignore file itself
-.gcloudignore
-# Ignore the .cloudignore file itself
-.cloudignore
-# Ignore any other files or directories you don't want to include in the build context
-stockfish*
-__pycache__

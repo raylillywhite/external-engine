@@ -5,13 +5,34 @@ import threading
 import os
 import secrets
 import argparse
-from utils import ok, setup_http_session, _LOG_LEVEL_MAP
 import google.cloud.logging
+
+
+_LOG_LEVEL_MAP = {
+    "critical": logging.CRITICAL,
+    "error": logging.ERROR,
+    "warning": logging.WARNING,
+    "info": logging.INFO,
+    "debug": logging.DEBUG,
+    "notset": logging.NOTSET,
+}
+
+def setup_http_session(token):
+    http = requests.Session()
+    http.headers["Authorization"] = f"Bearer {token}"
+    return http
+
+def ok(res):
+    try:
+        res.raise_for_status()
+    except requests.exceptions.HTTPError:
+        logging.error("Response: %s", res.text)
+        raise
+    return res
 
 def get_args():
     parser = argparse.ArgumentParser(description='Engine Arguments')
-    parser.add_argument('--name', default=os.environ.get('ENGINE_NAME', 'Alpha 2'))
-    parser.add_argument('--engine', default=os.environ.get('ENGINE_COMMAND'))
+    parser.add_argument('--name', default=os.environ.get('ENGINE_NAME', 'Local Mac'))
     parser.add_argument('--setoption', nargs='*', default=[])
     parser.add_argument('--lichess', default=os.environ.get('LICHESS_URL', 'https://lichess.org'))
     parser.add_argument('--broker', default=os.environ.get('BROKER_URL', 'https://engine.lichess.ovh'))
@@ -27,10 +48,6 @@ def get_args():
     args = parser.parse_args()
 
     logging.getLogger().setLevel(_LOG_LEVEL_MAP.get(args.log_level.lower(), logging.INFO))
-
-    if not args.engine:
-        logging.error("ENGINE_COMMAND environment variable is required")
-        exit(1)
 
     if not args.token:
         logging.error("LICHESS_API_TOKEN environment variable is required")
@@ -111,9 +128,9 @@ def invoke_cloud_function(cloud_function_url, job):
 
 def main():
     logging.basicConfig(level=logging.INFO)
-    # Configure Google Cloud Logging
-    client = google.cloud.logging.Client()
-    client.setup_logging()
+    if os.environ.get('GOOGLE_CLOUD_PROJECT'):
+        client = google.cloud.logging.Client()
+        client.setup_logging()
 
     logging.info("Starting server")
     args = get_args()

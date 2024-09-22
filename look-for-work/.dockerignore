@@ -1,5 +1,5 @@
-.gcloudignore
 .git
-.gitignore
+.gcloudignore
+.cloudignore
 stockfish*
 __pycache__

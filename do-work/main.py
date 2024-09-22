@@ -7,11 +7,34 @@ import threading
 import time
 import contextlib
 import argparse
+import google.cloud.logging
 
-from utils import ok, _LOG_LEVEL_MAP
+_LOG_LEVEL_MAP = {
+    "critical": logging.CRITICAL,
+    "error": logging.ERROR,
+    "warning": logging.WARNING,
+    "info": logging.INFO,
+    "debug": logging.DEBUG,
+    "notset": logging.NOTSET,
+}
+
+def ok(res):
+    try:
+        res.raise_for_status()
+    except requests.exceptions.HTTPError:
+        logging.error("Response: %s", res.text)
+        raise
+    return res
+
 
 @functions_framework.http
 def handle_job_request(request):
+    
+    logging.basicConfig(level=logging.INFO)
+    if os.environ.get('GOOGLE_CLOUD_PROJECT'):
+        client = google.cloud.logging.Client()
+        client.setup_logging()
+    
     job = request.get_json()
     if not job:
         logging.error("Invalid job data received")
