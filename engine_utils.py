@@ -19,12 +19,31 @@ _LOG_LEVEL_MAP = {
 
 def get_args():
     parser = argparse.ArgumentParser(description='Engine Arguments')
-    parser.add_argument('--broker', default=os.environ.get('BROKER_URL', 'http://localhost:5000'))
-    parser.add_argument('--token', default=os.environ.get('API_TOKEN', ''))
+    parser.add_argument('--name', default=os.environ.get('ENGINE_NAME', 'Alpha 2'))
+    parser.add_argument('--engine', default=os.environ.get('ENGINE_COMMAND'))
+    parser.add_argument('--setoption', nargs='*', default=[])
+    parser.add_argument('--lichess', default=os.environ.get('LICHESS_URL', 'https://lichess.org'))
+    parser.add_argument('--broker', default=os.environ.get('BROKER_URL', 'https://engine.lichess.ovh'))
+    parser.add_argument('--token', default=os.environ.get('LICHESS_API_TOKEN'))
+    parser.add_argument('--provider_secret', default=os.environ.get('PROVIDER_SECRET'))
+    parser.add_argument('--max_threads', type=int, default=int(os.environ.get('MAX_THREADS', os.cpu_count())))
+    parser.add_argument('--max_hash', type=int, default=int(os.environ.get('MAX_HASH', '512')))
+    parser.add_argument('--keep_alive', type=int, default=int(os.environ.get('KEEP_ALIVE', '300')))
     parser.add_argument('--poll_timeout', type=int, default=30)
     parser.add_argument('--poll_interval', type=int, default=5)
     parser.add_argument('--cloud_function_url', default=os.environ.get('CLOUD_FUNCTION_URL', ''))
+    parser.add_argument('--log_level', default=os.environ.get('LOG_LEVEL', 'info'))
+
     args = parser.parse_args()
+
+    if not args.engine:
+        logging.error("ENGINE_COMMAND environment variable is required")
+        exit(1)
+
+    if not args.token:
+        logging.error("LICHESS_API_TOKEN environment variable is required")
+        exit(1)
+
     return args
 
 def setup_http_session(token):
@@ -57,9 +76,7 @@ def register_engine(args, http):
     }
 
     # Engine instance is needed to get supported variants
-    engine = Engine(args)
-    supported_variants = engine.supported_variants or ["chess"]
-    engine.terminate()  # Terminate the engine after getting supported variants
+    supported_variants = ["chess"]
 
     registration = {
         "name": args.name,
