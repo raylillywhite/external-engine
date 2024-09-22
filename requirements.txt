@@ -1,2 +1,3 @@
 functions_framework
 requests
+google-cloud-logging

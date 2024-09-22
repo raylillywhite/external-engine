@@ -6,6 +6,7 @@ import os
 import secrets
 import argparse
 from utils import ok, setup_http_session, _LOG_LEVEL_MAP
+import google.cloud.logging
 
 def get_args():
     parser = argparse.ArgumentParser(description='Engine Arguments')
@@ -109,9 +110,11 @@ def invoke_cloud_function(cloud_function_url, job):
         logging.error("Error invoking cloud function: %s", err)
 
 def main():
-    # Configure logging
     logging.basicConfig(level=logging.INFO)
-    
+    # Configure Google Cloud Logging
+    client = google.cloud.logging.Client()
+    client.setup_logging()
+
     logging.info("Starting server")
     args = get_args()
     http = setup_http_session(args.token)
