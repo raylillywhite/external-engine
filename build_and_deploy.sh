@@ -8,7 +8,7 @@ gcloud functions deploy do-work \
   --entry-point handle_job_request \
   --trigger-http \
   --allow-unauthenticated \
-  --memory 4Gi \
+  --memory 16Gi \
   --cpu 8 \
   --timeout 540s \
   --region asia-east1 \

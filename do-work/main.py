@@ -56,10 +56,8 @@ def get_args(request):
     args.setoption = request.args.getlist('setoption') or []
     args.token = request.args.get('token', os.environ.get('LICHESS_API_TOKEN'))
     args.max_threads = int(request.args.get('max_threads', os.environ.get('MAX_THREADS', os.cpu_count())))
-    args.max_hash = int(request.args.get('max_hash', os.environ.get('MAX_HASH', '512')))
-    args.keep_alive = int(request.args.get('keep_alive', os.environ.get('KEEP_ALIVE', '300')))
+    args.max_hash = int(request.args.get('max_hash', os.environ.get('MAX_HASH', '8192')))
     args.log_level = request.args.get('log_level', os.environ.get('LOG_LEVEL', 'info'))
-    args.lichess = request.args.get('lichess', os.environ.get('LICHESS_URL', 'https://lichess.org'))
     args.broker = request.args.get('broker', os.environ.get('BROKER_URL', 'https://engine.lichess.ovh'))
 
     logging.getLogger().setLevel(_LOG_LEVEL_MAP.get(args.log_level.lower(), logging.INFO))
